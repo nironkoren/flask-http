@@ -30,7 +30,7 @@ except Exception as e:
 	print('Failed getting suggestions.\n{}'.format(e))
 	sys.exit(1)
 
-# credit 
+# credit: https://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
 def sizeof_fmt(num, suffix='B'):
     for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
         if abs(num) < 1024.0:
@@ -39,7 +39,7 @@ def sizeof_fmt(num, suffix='B'):
     return "%.0f%s%s" % (num, 'Yi', suffix)
 
 def get_delta(deployment,ratio):
-    x = {}
+    output = {}
 
     for i in sizing_suggestions['suggestions']:
         cmd = 'kubectl set resources deployment {} --requests='.format(deployment)
@@ -48,24 +48,24 @@ def get_delta(deployment,ratio):
 
             if (i['suggested_c_p_u'] != None and i['requested_c_p_u'] != None
                 and i['suggested_c_p_u'] > 0 and i['requested_c_p_u'] > 0):
-                x['cpu_delta'] = (i['suggested_c_p_u'] / i['requested_c_p_u'])
+                output['cpu_delta'] = (i['suggested_c_p_u'] / i['requested_c_p_u'])
 
             if (i['suggested_memory'] != None and i['requested_memory'] != None
                 and i['suggested_memory'] > 0 and i['requested_memory'] > 0):
-                x['memory_delta'] = (i['suggested_memory'] / i['requested_memory'])
+                output['memory_delta'] = (i['suggested_memory'] / i['requested_memory'])
 
-            if x['memory_delta'] >= ratio and x['cpu_delta'] >= ratio:
-                x['cmd'] = '{}cpu={}m,memory={}'.format(
+            if output['memory_delta'] >= ratio and output['cpu_delta'] >= ratio:
+                output['cmd'] = '{}cpu={}m,memory={}'.format(
                     cmd,i['suggested_c_p_u'],sizeof_fmt(i['suggested_memory']))
                 
-            elif x['memory_delta'] >= ratio and x['cpu_delta'] < ratio:
-                x['cmd'] = '{}memory={}'.format(
+            elif output['memory_delta'] >= ratio and output['cpu_delta'] < ratio:
+                output['cmd'] = '{}memory={}'.format(
                     cmd,sizeof_fmt(i['suggested_memory']))
                 
-            elif x['memory_delta'] < ratio and x['cpu_delta'] >= ratio:
-                x['cmd'] = '{}cpu={}m'.format(
+            elif output['memory_delta'] < ratio and output['cpu_delta'] >= ratio:
+                output['cmd'] = '{}cpu={}m'.format(
                     cmd,i['suggested_c_p_u'])
 
-        return x
+        return output
 
 print(get_delta(args.deployment,float(args.ratio))['cmd'])
