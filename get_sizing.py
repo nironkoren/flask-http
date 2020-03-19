@@ -1,4 +1,5 @@
 import spotinst_sdk
+import sys
 
 from argparse import ArgumentParser
 
