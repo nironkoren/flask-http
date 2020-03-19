@@ -2,18 +2,32 @@ import spotinst_sdk
 
 from argparse import ArgumentParser
 
-parser = ArgumentParser()
-parser.add_argument("-d", "--deployment", dest="deployment",
-                    help="deployment name")
-parser.add_argument("-r", "--ratio", dest="ratio", default=2,
-                    help="ratio of rs")
-
+parser = ArgumentParser(
+    description='Generate kubectl output based on Spotinst Ocean sizing suggestions')
+parser.add_argument('-d', '--deployment',
+    help='Name of the deployment to grab suggestions for.')
+parser.add_argument('-r', '--ratio', default=2,
+    help='The number between resource requests divided by the suggestions.')
+parser.add_argument('-t', '--auth_token',
+    help='Spotinst API Token.')
+parser.add_argument('-a', '--account_id',
+    help='ID of the Spotinst account.')
+parser.add_argument('-o', '--ocean_id',
+    help='ID of the Ocean cluster.')
+parser.add_argument('-n', '--namespace',
+    help='Namespace of the deployment in the cluster.')
 args = parser.parse_args()
 
-client = spotinst_sdk.SpotinstClient(auth_token='0ee164775151ff2119ec1eef25b70e1ed009ce69fc2abcd42cb61fd2e883d953',account_id='act-311c119f')
-
-
-recs = client.get_all_ocean_sizing('o-57b09a6e','default')
+try:
+	client = spotinst_sdk.SpotinstClient(auth_token=args.auth_token,account_id=args.account_id)
+except Exception as e:
+	print('Failed client init.\n{}'.format(e))
+	sys.exit(1)
+try:
+	sizing_suggestions = client.get_all_ocean_sizing(args.ocean_id,args.namespace)
+except Exception as e:
+	print('Failed getting suggestions.\n{}'.format(e))
+	sys.exit(1)
 
 # credit 
 def sizeof_fmt(num, suffix='B'):
@@ -26,7 +40,7 @@ def sizeof_fmt(num, suffix='B'):
 def get_delta(deployment,ratio):
     x = {}
 
-    for i in recs['suggestions']:
+    for i in sizing_suggestions['suggestions']:
         cmd = 'kubectl set resources deployment {} --requests='.format(deployment)
 
         if (i['deployment_name'] == deployment):
@@ -53,5 +67,4 @@ def get_delta(deployment,ratio):
 
         return x
 
-            
 print(get_delta(args.deployment,float(args.ratio))['cmd'])
