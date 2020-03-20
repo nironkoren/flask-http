@@ -1,6 +1,5 @@
 import spotinst_sdk
 import sys
-
 from argparse import ArgumentParser
 
 parser = ArgumentParser(
@@ -65,7 +64,12 @@ def get_delta(deployment,ratio):
             elif output['memory_delta'] < ratio and output['cpu_delta'] >= ratio:
                 output['cmd'] = '{}cpu={}m'.format(
                     cmd,i['suggested_c_p_u'])
-
+            else:
+                output['cmd'] = None
+                
         return output
+        
+cmd_out = get_delta(args.deployment,float(args.ratio))['cmd']
 
-print(get_delta(args.deployment,float(args.ratio))['cmd'])
+if cmd_out != None:
+    print(cmd_out)
