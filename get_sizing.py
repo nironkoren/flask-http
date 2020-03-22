@@ -40,34 +40,38 @@ def sizeof_fmt(num, suffix='B'):
 def get_delta(deployment,ratio):
     output = {}
 
-    for i in sizing_suggestions['suggestions']:
-        cmd = 'kubectl set resources deployment {} --requests='.format(deployment)
-
-        if (i['deployment_name'] == deployment):
-
-            if (i['suggested_c_p_u'] != None and i['requested_c_p_u'] != None
-                and i['suggested_c_p_u'] > 0 and i['requested_c_p_u'] > 0):
-                output['cpu_delta'] = (i['suggested_c_p_u'] / i['requested_c_p_u'])
-
-            if (i['suggested_memory'] != None and i['requested_memory'] != None
-                and i['suggested_memory'] > 0 and i['requested_memory'] > 0):
-                output['memory_delta'] = (i['suggested_memory'] / i['requested_memory'])
-
-            if output['memory_delta'] >= ratio and output['cpu_delta'] >= ratio:
-                output['cmd'] = '{}cpu={}m,memory={}'.format(
-                    cmd,i['suggested_c_p_u'],sizeof_fmt(i['suggested_memory']))
-                
-            elif output['memory_delta'] >= ratio and output['cpu_delta'] < ratio:
-                output['cmd'] = '{}memory={}'.format(
-                    cmd,sizeof_fmt(i['suggested_memory']))
-                
-            elif output['memory_delta'] < ratio and output['cpu_delta'] >= ratio:
-                output['cmd'] = '{}cpu={}m'.format(
-                    cmd,i['suggested_c_p_u'])
-            else:
-                output['cmd'] = None
-                
+    if len(sizing_suggestions['suggestions']) > 0:
+        for i in sizing_suggestions['suggestions']:
+            cmd = 'kubectl set resources deployment {} --requests='.format(deployment)
+            
+            if (i['deployment_name'] == deployment):
+            
+                if (i['suggested_c_p_u'] != None and i['requested_c_p_u'] != None
+                    and i['suggested_c_p_u'] > 0 and i['requested_c_p_u'] > 0):
+                    output['cpu_delta'] = (i['suggested_c_p_u'] / i['requested_c_p_u'])
+            
+                if (i['suggested_memory'] != None and i['requested_memory'] != None
+                    and i['suggested_memory'] > 0 and i['requested_memory'] > 0):
+                    output['memory_delta'] = (i['suggested_memory'] / i['requested_memory'])
+            
+                if output['memory_delta'] >= ratio and output['cpu_delta'] >= ratio:
+                    output['cmd'] = '{}cpu={}m,memory={}'.format(
+                        cmd,i['suggested_c_p_u'],sizeof_fmt(i['suggested_memory']))
+                    
+                elif output['memory_delta'] >= ratio and output['cpu_delta'] < ratio:
+                    output['cmd'] = '{}memory={}'.format(
+                        cmd,sizeof_fmt(i['suggested_memory']))
+                    
+                elif output['memory_delta'] < ratio and output['cpu_delta'] >= ratio:
+                    output['cmd'] = '{}cpu={}m'.format(
+                        cmd,i['suggested_c_p_u'])
+                else:
+                    output['cmd'] = None
+                    
         return output
+    else:
+        print('Could not find Right Sizing suggestions')
+        sys.exit(1)
         
 cmd_out = get_delta(args.deployment,float(args.ratio))['cmd']
 
